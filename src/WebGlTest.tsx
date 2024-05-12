@@ -1,0 +1,224 @@
+import React, { useEffect, useRef, useState } from 'react';
+import ColorTheme from './ColorTheme';
+import { kMeans } from './kmeans';
+
+type GlProps = {
+    colorTheme: ColorTheme;
+    setColorTheme: (_: ColorTheme) => void
+}
+
+type GlContext = {
+    context: WebGLRenderingContext;
+    program: WebGLProgram;
+}
+
+const WebGLImage: React.FC<GlProps> = (colors) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    let [imageBitmap, setImageBitmap] = useState<ImageBitmap | null>(null);
+    let [program, setProgram] = useState<GlContext | null>(null);
+
+    useEffect(() => {
+        // fetch a file from my home directory
+        fetch('MicrosoftTeams-image.png')
+            .then(response => response.blob())
+            .then(blob => createImageBitmap(blob))
+            .then(bitmap => {
+                const canvas = canvasRef.current;
+
+                if (!canvas) return;
+
+                canvas.width = bitmap.width;
+                canvas.height = bitmap.height;
+
+                setImageBitmap(bitmap);
+            })
+    }, [])
+
+    useEffect(() => {
+        if (!imageBitmap) return;
+
+        console.log("Start calculating kmeans")
+
+        // get the imagedata from imageBitmap
+        const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
+        const ctx = canvas.getContext('2d');
+
+        ctx?.drawImage(imageBitmap, 0, 0);
+        const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height);
+        if (!imageData) return;
+
+        const data: number[][] = [];
+        for (let i = 0; i < imageData.data.length; i += 4) {
+            data.push([imageData.data[i], imageData.data[i + 1], imageData.data[i + 2]]);
+        }
+
+        const centroids = kMeans(data, 8);
+        console.log("Centroids: ", centroids);
+
+        // call setColorTheme with the new colors
+        // create new colors with the rounded values of centroids
+
+        const newColors = centroids.map(c => ({ r: Math.floor(c[0]), g: Math.floor(c[1]), b: Math.floor(c[2]), a: 255 }));
+        colors.setColorTheme({ colors: newColors })
+    }, [imageBitmap])
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+
+        if (!canvas || !imageBitmap) return;
+
+        const gl = canvas.getContext('webgl');
+        if (!gl) return;
+
+        // Create vertex shader
+        const vertexShaderSource = `
+            attribute vec2 position;
+            attribute vec2 texCoord;
+            varying vec2 vTexCoord;
+
+            void main() {
+                gl_Position = vec4(position, 0, 1.0);
+                vTexCoord = texCoord;
+            }
+            `;
+
+        const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
+        gl.shaderSource(vertexShader, vertexShaderSource);
+        gl.compileShader(vertexShader);
+
+        // Create fragment shader
+        const fragmentShaderSource = `
+            precision mediump float;
+            uniform sampler2D texture;
+            uniform vec3 colors[10];
+            varying vec2 vTexCoord;
+            
+            void main() {
+                vec4 texColor = texture2D(texture, vTexCoord);
+                float minDistance = distance(texColor.rgb, colors[0]);
+                vec3 closestColor = colors[0];
+              
+                for (int i = 1; i < 10; ++i) { // Replace 10 with the size of your color array
+                  float currentDistance = distance(texColor.rgb, colors[i]);
+                  if (currentDistance < minDistance) {
+                    minDistance = currentDistance;
+                    closestColor = colors[i];
+                  }
+                }
+              
+                gl_FragColor = vec4(closestColor, 1.0);
+            }
+            `;
+
+        const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
+        gl.shaderSource(fragmentShader, fragmentShaderSource);
+        gl.compileShader(fragmentShader);
+
+        // Create program
+        const program = gl.createProgram()!;
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const vertices = new Float32Array(
+            [
+                // Triangle 1
+                1, -1, 1, 1,
+                -1, -1, 0, 1,
+                -1, 1, 0, 0,
+
+                // Triangle 2
+                -1, 1, 0, 0,
+                1, 1, 1, 0,
+                1, -1, 1, 1
+            ]
+        );
+
+
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+
+        // Set up attributes
+        const positionAttributeLocation = gl.getAttribLocation(program, 'position');
+        gl.enableVertexAttribArray(positionAttributeLocation);
+        gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 16, 0);
+
+        const texCoordAttributeLocation = gl.getAttribLocation(program, 'texCoord');
+        gl.enableVertexAttribArray(texCoordAttributeLocation);
+        gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 16, 8);
+        
+        let myVec3Array = new Float32Array([
+            0.1, 0, 0,
+            0.2, 0, 0,
+            0.3, 0, 0,
+            0.4, 0, 0,
+            0.5, 0, 0,
+            0.6, 0, 0,
+            0.7, 0, 0,
+            0.8, 0, 0,
+            0.9, 0, 0,
+            1, 0, 0,
+        ]);
+        let location = gl.getUniformLocation(program, 'colors');
+        gl.uniform3fv(location, myVec3Array);
+
+        setProgram({ program: program, context: gl })
+    }, [imageBitmap])
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+
+        if (!canvas || !imageBitmap) return;
+
+        if (!program) return;
+
+        const gl = program.context
+
+        // set colors
+        let myVec3Array = new Float32Array(30);
+        // iterate over colors, and set them in the array
+        colors.colorTheme.colors.forEach((color, index) => {
+            myVec3Array[index * 3] = color.r / 255;
+            myVec3Array[index * 3 + 1] = color.g / 255;
+            myVec3Array[index * 3 + 2] = color.b / 255;
+        });
+        if (colors.colorTheme.colors.length < 10) {
+            // set remaining values in myVec3Array to the last color
+            const last = colors.colorTheme.colors[colors.colorTheme.colors.length - 1];
+            for (let i = colors.colorTheme.colors.length; i < 10; i++) {
+                myVec3Array[i * 3] = last.r / 255;
+                myVec3Array[i * 3 + 1] = last.g / 255;
+                myVec3Array[i * 3 + 2] = last.b / 255;
+            }
+        }
+
+        gl.useProgram(program.program)
+        let location = gl.getUniformLocation(program.program, 'colors');
+        gl.uniform3fv(location, myVec3Array);
+
+        // // Create texture
+        const texture = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageBitmap);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        // Render
+        gl.clearColor(0.5, 0.5, 0.5, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }, [program, imageBitmap, colors])
+
+
+    return <>
+        <canvas ref={canvasRef} width="500px" height="500px" />;
+    </>
+};
+
+export default WebGLImage;
