@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ColorTheme from './ColorTheme';
-import { kMeans } from './kmeans';
 
 type GlProps = {
     colorTheme: ColorTheme,
-    setColorTheme: (_: ColorTheme) => void
     imageBitmap: ImageBitmap | null
 }
 
@@ -13,10 +11,63 @@ type GlContext = {
     program: WebGLProgram;
 }
 
-const WebGLImage: React.FC<GlProps> = ({colorTheme, setColorTheme, imageBitmap}) => {
+type Rendered = {
+    renderedAt: number;
+}
+
+const WebGLImage: React.FC<GlProps> = ({colorTheme, imageBitmap}) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     let [program, setProgram] = useState<GlContext | null>(null);
+    let renderState = useRef<Rendered | "scheduled">({renderedAt: Date.now()})
+
+    const render = () => {
+        const canvas = canvasRef.current;
+
+        if (!canvas || !imageBitmap) return;
+
+        if (!program) return;
+
+        const gl = program.context
+
+        // set colors
+        let myVec3Array = new Float32Array(30);
+        // iterate over colors, and set them in the array
+        colorTheme.colors.forEach((color, index) => {
+            myVec3Array[index * 3] = color.r / 255;
+            myVec3Array[index * 3 + 1] = color.g / 255;
+            myVec3Array[index * 3 + 2] = color.b / 255;
+        });
+        if (colorTheme.colors.length < 10) {
+            // set remaining values in myVec3Array to the last color
+            const last = colorTheme.colors[colorTheme.colors.length - 1];
+            for (let i = colorTheme.colors.length; i < 10; i++) {
+                myVec3Array[i * 3] = last.r / 255;
+                myVec3Array[i * 3 + 1] = last.g / 255;
+                myVec3Array[i * 3 + 2] = last.b / 255;
+            }
+        }
+
+        gl.useProgram(program.program)
+        let location = gl.getUniformLocation(program.program, 'colors');
+        gl.uniform3fv(location, myVec3Array);
+
+        // // Create texture
+        const texture = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageBitmap);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        // Render
+        gl.clearColor(0.5, 0.5, 0.5, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+    }
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -127,50 +178,18 @@ const WebGLImage: React.FC<GlProps> = ({colorTheme, setColorTheme, imageBitmap})
     }, [imageBitmap])
 
     useEffect(() => {
-        const canvas = canvasRef.current;
-
-        if (!canvas || !imageBitmap) return;
-
-        if (!program) return;
-
-        const gl = program.context
-
-        // set colors
-        let myVec3Array = new Float32Array(30);
-        // iterate over colors, and set them in the array
-        colorTheme.colors.forEach((color, index) => {
-            myVec3Array[index * 3] = color.r / 255;
-            myVec3Array[index * 3 + 1] = color.g / 255;
-            myVec3Array[index * 3 + 2] = color.b / 255;
-        });
-        if (colorTheme.colors.length < 10) {
-            // set remaining values in myVec3Array to the last color
-            const last = colorTheme.colors[colorTheme.colors.length - 1];
-            for (let i = colorTheme.colors.length; i < 10; i++) {
-                myVec3Array[i * 3] = last.r / 255;
-                myVec3Array[i * 3 + 1] = last.g / 255;
-                myVec3Array[i * 3 + 2] = last.b / 255;
+        if (renderState.current !== "scheduled") {
+            if ((Date.now() - renderState.current.renderedAt) < 30) {
+                setTimeout(() => {
+                    render()
+                    renderState.current = {renderedAt: Date.now()}
+                }, 30 - (Date.now() - renderState.current.renderedAt));
+                renderState.current = "scheduled";
+            } else {
+                renderState.current = {renderedAt: Date.now()}
+                render()
             }
         }
-
-        gl.useProgram(program.program)
-        let location = gl.getUniformLocation(program.program, 'colors');
-        gl.uniform3fv(location, myVec3Array);
-
-        // // Create texture
-        const texture = gl.createTexture();
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageBitmap);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-        // Render
-        gl.clearColor(0.5, 0.5, 0.5, 1);
-        gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
     }, [program, imageBitmap, colorTheme])
 
 

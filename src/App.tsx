@@ -61,7 +61,7 @@ function App() {
     return (
       <>
         {loading ? loadingDiv : <ColorTheme updateTheme={(c) => updateColors(c)} theme={colors} />}
-        <WebGlTest colorTheme={colors} setColorTheme={(c) => updateColors(c)} imageBitmap={bitmap} />
+        <WebGlTest colorTheme={colors} imageBitmap={bitmap} />
       </>
     )
   }
