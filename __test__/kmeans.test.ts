@@ -5,7 +5,7 @@ describe('kmeans', () => {
     const data = [[1], [2], [3], [100], [101], [102]];
     const k = 2;
 
-    const result = kMeans(data, k);
+    const result = kMeans(data, k, _ => {});
 
     expect(result).toEqual(expect.arrayContaining([[2], [101]]));
   });

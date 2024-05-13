@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { Pixel } from './pixel';
 
 interface ColorTheme {
@@ -75,23 +75,6 @@ function pixelToHex(pixel: Pixel): string {
         pixel.r.toString(16).padStart(2, '0') +
         pixel.g.toString(16).padStart(2, '0') +
         pixel.b.toString(16).padStart(2, '0')
-}
-
-function multiply(color: Pixel): Pixel[] {
-    let pixels = [color]
-
-    let r = color.r
-    let g = color.g
-    let b = color.b
-
-    while (r < 255 || g < 255 || b < 255) {
-        r = Math.min(r + 50, 255)
-        g = Math.min(g + 50, 255)
-        b = Math.min(b + 50, 255)
-        pixels.push({ r, g, b, a: 255 })
-    }
-
-    return pixels
 }
 
 export default ColorTheme;
