@@ -4,6 +4,7 @@ import ColorTheme from './ColorTheme'
 import WebGlRenderer from './WebGlRenderer'
 import ImageUpload from './ImageUpload'
 import { WorkerMessage } from './workermessage'
+import MyWorker from './worker?worker'
 
 function App() {
   const [colors, setColors] = useState<ColorTheme | null>(null)
@@ -30,7 +31,7 @@ function App() {
       data.push([imageData.data[i], imageData.data[i + 1], imageData.data[i + 2]]);
     }
 
-    const worker = new Worker('worker.ts', { type: 'module' });
+    const worker = new MyWorker();
 
     worker.postMessage({ data });
 
