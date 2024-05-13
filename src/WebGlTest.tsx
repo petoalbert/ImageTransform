@@ -3,8 +3,9 @@ import ColorTheme from './ColorTheme';
 import { kMeans } from './kmeans';
 
 type GlProps = {
-    colorTheme: ColorTheme;
+    colorTheme: ColorTheme,
     setColorTheme: (_: ColorTheme) => void
+    imageBitmap: ImageBitmap | null
 }
 
 type GlContext = {
@@ -12,28 +13,10 @@ type GlContext = {
     program: WebGLProgram;
 }
 
-const WebGLImage: React.FC<GlProps> = (colors) => {
+const WebGLImage: React.FC<GlProps> = ({colorTheme, setColorTheme, imageBitmap}) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    let [imageBitmap, setImageBitmap] = useState<ImageBitmap | null>(null);
     let [program, setProgram] = useState<GlContext | null>(null);
-
-    useEffect(() => {
-        // fetch a file from my home directory
-        fetch('MicrosoftTeams-image.png')
-            .then(response => response.blob())
-            .then(blob => createImageBitmap(blob))
-            .then(bitmap => {
-                const canvas = canvasRef.current;
-
-                if (!canvas) return;
-
-                canvas.width = bitmap.width;
-                canvas.height = bitmap.height;
-
-                setImageBitmap(bitmap);
-            })
-    }, [])
 
     useEffect(() => {
         if (!imageBitmap) return;
@@ -60,13 +43,16 @@ const WebGLImage: React.FC<GlProps> = (colors) => {
         // create new colors with the rounded values of centroids
 
         const newColors = centroids.map(c => ({ r: Math.floor(c[0]), g: Math.floor(c[1]), b: Math.floor(c[2]), a: 255 }));
-        colors.setColorTheme({ colors: newColors })
+        setColorTheme({ colors: newColors })
     }, [imageBitmap])
 
     useEffect(() => {
         const canvas = canvasRef.current;
 
         if (!canvas || !imageBitmap) return;
+
+        canvas.width = imageBitmap.width;
+        canvas.height = imageBitmap.height;
 
         const gl = canvas.getContext('webgl');
         if (!gl) return;
@@ -180,15 +166,15 @@ const WebGLImage: React.FC<GlProps> = (colors) => {
         // set colors
         let myVec3Array = new Float32Array(30);
         // iterate over colors, and set them in the array
-        colors.colorTheme.colors.forEach((color, index) => {
+        colorTheme.colors.forEach((color, index) => {
             myVec3Array[index * 3] = color.r / 255;
             myVec3Array[index * 3 + 1] = color.g / 255;
             myVec3Array[index * 3 + 2] = color.b / 255;
         });
-        if (colors.colorTheme.colors.length < 10) {
+        if (colorTheme.colors.length < 10) {
             // set remaining values in myVec3Array to the last color
-            const last = colors.colorTheme.colors[colors.colorTheme.colors.length - 1];
-            for (let i = colors.colorTheme.colors.length; i < 10; i++) {
+            const last = colorTheme.colors[colorTheme.colors.length - 1];
+            for (let i = colorTheme.colors.length; i < 10; i++) {
                 myVec3Array[i * 3] = last.r / 255;
                 myVec3Array[i * 3 + 1] = last.g / 255;
                 myVec3Array[i * 3 + 2] = last.b / 255;
@@ -213,11 +199,11 @@ const WebGLImage: React.FC<GlProps> = (colors) => {
         gl.clearColor(0.5, 0.5, 0.5, 1);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }, [program, imageBitmap, colors])
+    }, [program, imageBitmap, colorTheme])
 
 
     return <>
-        <canvas ref={canvasRef} width="500px" height="500px" />;
+        <canvas ref={canvasRef} width="500px" height="500px" />
     </>
 };
 
