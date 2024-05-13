@@ -1,11 +1,8 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 import ColorTheme from './ColorTheme'
-import WebGlTest from './WebGlTest'
+import WebGlRenderer from './WebGlRenderer'
 import ImageUpload from './ImageUpload'
-import { kMeans } from './kmeans'
 import { WorkerMessage } from './workermessage'
 
 function App() {
@@ -61,7 +58,7 @@ function App() {
     return (
       <>
         {loading ? loadingDiv : <ColorTheme updateTheme={(c) => updateColors(c)} theme={colors} />}
-        <WebGlTest colorTheme={colors} imageBitmap={bitmap} />
+        <WebGlRenderer colorTheme={colors} imageBitmap={bitmap} />
       </>
     )
   }

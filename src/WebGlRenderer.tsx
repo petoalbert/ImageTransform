@@ -15,7 +15,7 @@ type Rendered = {
     renderedAt: number;
 }
 
-const WebGLImage: React.FC<GlProps> = ({colorTheme, imageBitmap}) => {
+const WebGlRenderer: React.FC<GlProps> = ({colorTheme, imageBitmap}) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     let [program, setProgram] = useState<GlContext | null>(null);
@@ -198,4 +198,4 @@ const WebGLImage: React.FC<GlProps> = ({colorTheme, imageBitmap}) => {
     </>
 };
 
-export default WebGLImage;
+export default WebGlRenderer;
