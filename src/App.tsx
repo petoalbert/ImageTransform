@@ -14,7 +14,6 @@ function App() {
   const [loading, setLoading] = useState<boolean>(false)
 
   const updateColors = (theme: ColorTheme) => {
-    console.log("New colors: ", theme)
     setColors(theme)
   }
 
@@ -22,9 +21,6 @@ function App() {
     setBitmap(b)
     setLoading(true)
 
-    console.log("Start calculating kmeans")
-
-    // get the imagedata from imageBitmap
     const canvas = new OffscreenCanvas(b.width, b.height);
     const ctx = canvas.getContext('2d');
 
@@ -37,16 +33,11 @@ function App() {
       data.push([imageData.data[i], imageData.data[i + 1], imageData.data[i + 2]]);
     }
 
-    // create a new worker
     const worker = new Worker('worker.ts', { type: 'module' });
 
-    // post the data to the worker
     worker.postMessage({ data });
 
-    // listen for messages from the worker
     worker.onmessage = function (event: MessageEvent<WorkerMessage>) {
-      console.log("Colors: " + event.data.colors)
-      // call setColorTheme with the new colors
       setColors({ colors: event.data.colors });
       if (!event.data.inProgress) {
         setLoading(false);
