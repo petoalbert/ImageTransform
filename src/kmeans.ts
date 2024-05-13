@@ -29,7 +29,7 @@ export function kMeans(data: number[][], k: number): number[][] {
 
         // Update centroids
         prevCentroids = [...centroids];
-        centroids = updateCentroids(clusters);
+        centroids = updateCentroids(clusters, data);
 
         iterations++;
     }
@@ -77,14 +77,14 @@ function euclideanDistance(point1: number[], point2: number[]): number {
     return Math.sqrt(sum);
 }
 
-function updateCentroids(clusters: number[][][]): number[][] {
+function updateCentroids(clusters: number[][][], data: number[][]): number[][] {
     const centroids: number[][] = [];
 
     for (let i = 0; i < clusters.length; i++) {
         const cluster = clusters[i];
         if (cluster.length === 0) {
             // If cluster is empty, assign a random data point as centroid
-            centroids.push(cluster[Math.floor(Math.random() * cluster.length)]);
+            centroids.push(data[Math.floor(Math.random() * data.length)]);
         } else {
             // Calculate centroid as the mean of all data points in the cluster
             const centroid = cluster[0].map((_, j) => cluster.reduce((sum, point) => sum + point[j], 0) / cluster.length);
