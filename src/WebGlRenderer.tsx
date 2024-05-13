@@ -17,6 +17,7 @@ type Rendered = {
 
 const WebGlRenderer: React.FC<GlProps> = ({colorTheme, imageBitmap}) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const divRef = useRef<HTMLDivElement>(null);
 
     let [program, setProgram] = useState<GlContext | null>(null);
     let renderState = useRef<Rendered | "scheduled">({renderedAt: Date.now()})
@@ -72,10 +73,11 @@ const WebGlRenderer: React.FC<GlProps> = ({colorTheme, imageBitmap}) => {
     useEffect(() => {
         const canvas = canvasRef.current;
 
-        if (!canvas || !imageBitmap) return;
+        if (!canvas || !imageBitmap || !divRef.current) return;
 
-        canvas.width = imageBitmap.width;
-        canvas.height = imageBitmap.height;
+        // TODO update when the window is resized
+        canvas.width = divRef.current.offsetWidth;
+        canvas.height = imageBitmap.height * (divRef.current.offsetWidth / imageBitmap.width);
 
         const gl = canvas.getContext('webgl');
         if (!gl) return;
@@ -193,9 +195,9 @@ const WebGlRenderer: React.FC<GlProps> = ({colorTheme, imageBitmap}) => {
     }, [program, imageBitmap, colorTheme])
 
 
-    return <>
-        <canvas ref={canvasRef} width="500px" height="500px" />
-    </>
+    return <div ref={divRef}>
+        <canvas ref={canvasRef} />
+    </div>
 };
 
 export default WebGlRenderer;

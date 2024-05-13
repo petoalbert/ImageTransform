@@ -32,7 +32,7 @@ const ColorTheme: React.FC<ColorThemeProps> = ({ updateTheme, theme }) => {
     }
 
     return (<form>
-        <div className='row justify-content-end'>
+        <div className='row justify-content-end mb-3'>
             {theme.colors.map((color, index) => (
                 <div className='col-sm-1 d-flex align-items-center' key={index}>
                     <div style={{ display: 'inline-block' }}>
