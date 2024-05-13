@@ -10,12 +10,6 @@
 }
 
 #loading {
-  /* align center both vertically and horizontally */
-  position: fixed;
-  /* Changed from absolute to fixed */
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   /* Added to center the div */
 
   width: 200px;

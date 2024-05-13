@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Pixel } from './ImageMatrix';
+import { Pixel } from './pixel';
 
 interface ColorTheme {
     colors: Pixel[];

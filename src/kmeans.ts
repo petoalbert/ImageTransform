@@ -1,4 +1,4 @@
-export function kMeans(data: number[][], k: number): number[][] {
+export function kMeans(data: number[][], k: number, progress: (_: number[][]) => void): number[][] {
     // Step 1: Initialize centroids randomly
     let centroids: number[][] = [];
     for (let i = 0; i < k; i++) {
@@ -15,6 +15,7 @@ export function kMeans(data: number[][], k: number): number[][] {
     let iterations = 0;
 
     while (!hasConverged(centroids, prevCentroids)) {
+        progress(centroids)
         // Clear clusters
         for (let i = 0; i < k; i++) {
             clusters[i] = [];

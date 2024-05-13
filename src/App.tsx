@@ -6,11 +6,12 @@ import ColorTheme from './ColorTheme'
 import WebGlTest from './WebGlTest'
 import ImageUpload from './ImageUpload'
 import { kMeans } from './kmeans'
+import { WorkerMessage } from './workermessage'
 
 function App() {
   const [colors, setColors] = useState<ColorTheme | null>(null)
-
   const [bitmap, setBitmap] = useState<ImageBitmap | null>(null)
+  const [loading, setLoading] = useState<boolean>(false)
 
   const updateColors = (theme: ColorTheme) => {
     console.log("New colors: ", theme)
@@ -19,6 +20,7 @@ function App() {
 
   const updateBitmap = (b: ImageBitmap) => {
     setBitmap(b)
+    setLoading(true)
 
     console.log("Start calculating kmeans")
 
@@ -42,27 +44,32 @@ function App() {
     worker.postMessage({ data });
 
     // listen for messages from the worker
-    worker.onmessage = function (event) {
+    worker.onmessage = function (event: MessageEvent<WorkerMessage>) {
+      console.log("Colors: " + event.data.colors)
       // call setColorTheme with the new colors
-      setColors({ colors: event.data });
+      setColors({ colors: event.data.colors });
+      if (!event.data.inProgress) {
+        setLoading(false);
+      }
     };
   }
 
-  if (!bitmap) {
+
+  if (!bitmap || !colors) {
     return (
       <ImageUpload setBitmap={updateBitmap} />
     )
-  } else if (!colors) {
-    return <div id="loading">
+  } else {
+    const loadingDiv = <div id="loading" style={{ width: bitmap.width }}>
       Analyzing image...
       <div id="spinner" className="spinner-border" role="status">
         <span className="visually-hidden">Loading...</span>
       </div>
     </div>
-  } else {
+
     return (
       <>
-        <ColorTheme updateTheme={(c) => updateColors(c)} theme={colors} />
+        {loading ? loadingDiv : <ColorTheme updateTheme={(c) => updateColors(c)} theme={colors} />}
         <WebGlTest colorTheme={colors} setColorTheme={(c) => updateColors(c)} imageBitmap={bitmap} />
       </>
     )
