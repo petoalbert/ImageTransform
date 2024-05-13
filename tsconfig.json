@@ -21,6 +21,6 @@
     "noFallthroughCasesInSwitch": true,
     "esModuleInterop": true
   },
-  "include": ["src"],
+  "include": ["src", "public/worker.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

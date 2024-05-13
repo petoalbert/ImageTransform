@@ -19,34 +19,6 @@ const WebGLImage: React.FC<GlProps> = ({colorTheme, setColorTheme, imageBitmap})
     let [program, setProgram] = useState<GlContext | null>(null);
 
     useEffect(() => {
-        if (!imageBitmap) return;
-
-        console.log("Start calculating kmeans")
-
-        // get the imagedata from imageBitmap
-        const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
-        const ctx = canvas.getContext('2d');
-
-        ctx?.drawImage(imageBitmap, 0, 0);
-        const imageData = ctx?.getImageData(0, 0, canvas.width, canvas.height);
-        if (!imageData) return;
-
-        const data: number[][] = [];
-        for (let i = 0; i < imageData.data.length; i += 4) {
-            data.push([imageData.data[i], imageData.data[i + 1], imageData.data[i + 2]]);
-        }
-
-        const centroids = kMeans(data, 8);
-        console.log("Centroids: ", centroids);
-
-        // call setColorTheme with the new colors
-        // create new colors with the rounded values of centroids
-
-        const newColors = centroids.map(c => ({ r: Math.floor(c[0]), g: Math.floor(c[1]), b: Math.floor(c[2]), a: 255 }));
-        setColorTheme({ colors: newColors })
-    }, [imageBitmap])
-
-    useEffect(() => {
         const canvas = canvasRef.current;
 
         if (!canvas || !imageBitmap) return;
