@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Pixel } from './pixel';
 
 interface ColorTheme {
@@ -11,6 +11,8 @@ interface ColorThemeProps {
 }
 
 const ColorTheme: React.FC<ColorThemeProps> = ({ updateTheme, theme }) => {
+    const originalTheme = useRef<ColorTheme>(theme);
+
     const updateColor = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
         updateTheme({ colors: theme.colors.map((color, i) => i === index ? getPixel(event.target.value) : color) });
     };
@@ -53,7 +55,9 @@ const ColorTheme: React.FC<ColorThemeProps> = ({ updateTheme, theme }) => {
                     <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
                 </svg>
             </div>}
-            <div className='col'></div>
+            <div className='col d-flex'>
+                <button id="colorReset" type="button" className="ml-auto btn btn-primary" onClick={_ => updateTheme(originalTheme.current)}>Reset</button>
+            </div>
         </div>
     </form>)
 };
