@@ -25,15 +25,14 @@ const ColorTheme: React.FC<ColorThemeProps> = ({ updateTheme, theme }) => {
     }
 
     const addColor = () => {
-        if (theme.colors.length < 10) {
+        if (theme.colors.length < 8) {
             const newColors = theme.colors.concat({ r: 0, g: 0, b: 0, a: 255 })
             updateTheme({ colors: newColors });
         }
     }
 
     return (<form>
-        <div className='row'>
-            <div className='col'></div>
+        <div className='row justify-content-end'>
             {theme.colors.map((color, index) => (
                 <div className='col-sm-1 d-flex align-items-center' key={index}>
                     <div style={{ display: 'inline-block' }}>
@@ -49,14 +48,16 @@ const ColorTheme: React.FC<ColorThemeProps> = ({ updateTheme, theme }) => {
                     </svg>
                 </div>
             ))}
-            {theme.colors.length < 8 && <div className="col-sm-1 d-flex align-items-center">
+            <div className="col-sm-1 d-flex align-items-center">
                 <svg onClick={_ => addColor()} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-plus-square" viewBox="0 0 16 16">
                     <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" />
                     <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
                 </svg>
-            </div>}
-            <div className='col d-flex'>
-                <button id="colorReset" type="button" className="ml-auto btn btn-primary" onClick={_ => updateTheme(originalTheme.current)}>Reset</button>
+            </div>
+            <div className='col-sm-1 d-flex align-items-center'>
+                <div style={{ display: 'inline-block' }}>
+                    <button id="colorReset" type="button" className="ml-auto btn btn-primary" onClick={_ => updateTheme(originalTheme.current)}>Reset</button>
+                </div>
             </div>
         </div>
     </form>)
